@@ -1,7 +1,6 @@
 import React from "react"
 import "./index.css"
 
-
 const PRESETS = [
   { label: "1 min", minutes: 1 },
   { label: "3 min", minutes: 3 },
@@ -15,20 +14,15 @@ function formatTime(totalSeconds) {
   const hours = Math.floor(totalSeconds / 3600)
   const minutes = Math.floor((totalSeconds % 3600) / 60)
   const seconds = totalSeconds % 60
-  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
-    2,
-    "0"
-  )}:${String(seconds).padStart(2, "0")}`
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
 }
 
 export default function App() {
-  const [totalSeconds, setTotalSeconds] = React.useState(0) // 你设定的总时间（会累加）
-  const [remainingSeconds, setRemainingSeconds] = React.useState(0) // 真正在倒数的值
+  const [totalSeconds, setTotalSeconds] = React.useState(0)
+  const [remainingSeconds, setRemainingSeconds] = React.useState(0)
   const [isRunning, setIsRunning] = React.useState(false)
   const audioRef = React.useRef(null)
   const alarmCountRef = React.useRef(0)
-
-
 
   function addMinutes(min) {
     if (isRunning) return
@@ -37,84 +31,59 @@ export default function App() {
     setRemainingSeconds((prev) => prev + add)
   }
 
+  // 🚀 新增：专门用来测试 3 秒的函数
+  function handleTest() {
+    if (isRunning) return
+    setTotalSeconds(3)
+    setRemainingSeconds(3)
+    setIsRunning(true)
+  }
+
   function handleStart() {
     if (totalSeconds === 0) return
     if (remainingSeconds === 0) {
-      // 万一剩余是0（比如刚取消过），就用总时间重置
       setRemainingSeconds(totalSeconds)
     }
     setIsRunning(true)
   }
 
-function startAlarm(times = 3) {
-  const audio = audioRef.current
-  if (!audio) return
-
-  alarmCountRef.current = 0
-
-  // 开播第一次
-  audio.currentTime = 0
-  audio.play().catch(() => {
-    console.log("audio play blocked")
-  })
-}
-
-function stopAlarm() {
-  const audio = audioRef.current
-  if (!audio) return
-
-  alarmCountRef.current = 0
-  audio.pause()
-  audio.currentTime = 0
-}
-
-
- function handleCancel() {
-  setIsRunning(false)
-  setTotalSeconds(0)
-  setRemainingSeconds(0)
-  stopAlarm()
-
-
-  const audio = audioRef.current
-  if (audio) {
+  function stopAlarm() {
+    const audio = audioRef.current
+    if (!audio) return
+    alarmCountRef.current = 0
     audio.pause()
     audio.currentTime = 0
   }
-}
 
+  function handleCancel() {
+    setIsRunning(false)
+    setTotalSeconds(0)
+    setRemainingSeconds(0)
+    stopAlarm()
+  }
 
-  // 倒计时：每秒 -1
- React.useEffect(() => {
-  if (!isRunning) return
+  React.useEffect(() => {
+    if (!isRunning) return
 
-  const id = setInterval(() => {
-    setRemainingSeconds((prev) => {
-      const next = Math.max(0, prev - 1)
-
-      if (next === 0) {
-        // 1️⃣ 停止计时
-        setIsRunning(false)
-
-        // 2️⃣ 播放音频
-        const audio = audioRef.current
-        if (audio) {
-          audio.currentTime = 0
-          audio.play().catch(() => {
-            console.log("audio play blocked")
-          })
+    const id = setInterval(() => {
+      setRemainingSeconds((prev) => {
+        const next = Math.max(0, prev - 1)
+        if (next === 0) {
+          setIsRunning(false)
+          const audio = audioRef.current
+          if (audio) {
+            audio.currentTime = 0
+            audio.play().catch((err) => console.log("Audio play failed:", err))
+          }
         }
-      }
+        return next
+      })
+    }, 1000)
 
-      return next
-    })
-  }, 1000)
+    return () => clearInterval(id)
+  }, [isRunning])
 
-  return () => clearInterval(id)
-}, [isRunning])
-
-
-  const displaySeconds = isRunning ? remainingSeconds : remainingSeconds
+  const displaySeconds = remainingSeconds
   const totalMinutes = Math.round(totalSeconds / 60)
 
   return (
@@ -138,11 +107,20 @@ function stopAlarm() {
             </button>
           ))}
 
+          {/* 🎯 调试神器：3秒测试按钮 */}
+          <button 
+            className="test-btn" 
+            onClick={handleTest} 
+            disabled={isRunning}
+            style={{ backgroundColor: '#FFD700', color: '#000' }} 
+          >
+            Test (3s)
+          </button>
+
           <button
             className="start"
             onClick={handleStart}
             disabled={isRunning || totalSeconds === 0}
-           
           >
             Start
           </button>
@@ -151,25 +129,24 @@ function stopAlarm() {
             Cancel
           </button>
 
+          {/* 🔊 音频标签 - 确保路径是 /soda-sound.wav */}
           <audio 
-          ref={audioRef} 
-          src="/alarm.wav" 
-          preload="auto"
-          onEnded={() => {
-            alarmCountRef.current += 1
-
-            if (alarmCountRef.current <3) {
-              const audio = audioRef.current
-              if (!audio) return
-              audio.currentTime = 0
-              audio.play().catch(() => {})
-            } else {
-              alarmCountRef.current = 0
-            }
-          }}
-          
+            ref={audioRef} 
+            src="/soda-sound.wav" 
+            preload="auto"
+            onEnded={() => {
+              alarmCountRef.current += 1
+              if (alarmCountRef.current < 3) {
+                const audio = audioRef.current
+                if (audio) {
+                  audio.currentTime = 0
+                  audio.play().catch(() => {})
+                }
+              } else {
+                alarmCountRef.current = 0
+              }
+            }}
           />
-
         </div>
       </div>
     </div>
