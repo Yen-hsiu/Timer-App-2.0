@@ -1,7 +1,6 @@
 import React from "react"
 import "./index.css"
 
-
 const PRESETS = [
   { label: "1 min", minutes: 1 },
   { label: "3 min", minutes: 3 },
@@ -15,20 +14,19 @@ function formatTime(totalSeconds) {
   const hours = Math.floor(totalSeconds / 3600)
   const minutes = Math.floor((totalSeconds % 3600) / 60)
   const seconds = totalSeconds % 60
-  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
-    2,
-    "0"
-  )}:${String(seconds).padStart(2, "0")}`
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
 }
 
 export default function App() {
-  const [totalSeconds, setTotalSeconds] = React.useState(0) // 你设定的总时间（会累加）
-  const [remainingSeconds, setRemainingSeconds] = React.useState(0) // 真正在倒数的值
+  const [totalSeconds, setTotalSeconds] = React.useState(0)
+  const [remainingSeconds, setRemainingSeconds] = React.useState(0)
   const [isRunning, setIsRunning] = React.useState(false)
   const audioRef = React.useRef(null)
   const alarmCountRef = React.useRef(0)
 
-
+  // 🚀 SVG 圆环参数
+  const RADIUS = 100; // 半径
+  const CIRCUMFERENCE = 2 * Math.PI * RADIUS; // 周长
 
   function addMinutes(min) {
     if (isRunning) return
@@ -37,97 +35,121 @@ export default function App() {
     setRemainingSeconds((prev) => prev + add)
   }
 
+  function handleTest() {
+    if (isRunning) return
+    setTotalSeconds(3)
+    setRemainingSeconds(3)
+    setIsRunning(true)
+  }
+
   function handleStart() {
     if (totalSeconds === 0) return
     if (remainingSeconds === 0) {
-      // 万一剩余是0（比如刚取消过），就用总时间重置
       setRemainingSeconds(totalSeconds)
     }
     setIsRunning(true)
   }
 
-function startAlarm(times = 3) {
-  const audio = audioRef.current
-  if (!audio) return
-
-  alarmCountRef.current = 0
-
-  // 开播第一次
-  audio.currentTime = 0
-  audio.play().catch(() => {
-    console.log("audio play blocked")
-  })
-}
-
-function stopAlarm() {
-  const audio = audioRef.current
-  if (!audio) return
-
-  alarmCountRef.current = 0
-  audio.pause()
-  audio.currentTime = 0
-}
-
-
- function handleCancel() {
-  setIsRunning(false)
-  setTotalSeconds(0)
-  setRemainingSeconds(0)
-  stopAlarm()
-
-
-  const audio = audioRef.current
-  if (audio) {
+  function stopAlarm() {
+    const audio = audioRef.current
+    if (!audio) return
+    alarmCountRef.current = 0
     audio.pause()
     audio.currentTime = 0
   }
-}
 
+  function handleCancel() {
+    setIsRunning(false)
+    setTotalSeconds(0)
+    setRemainingSeconds(0)
+    stopAlarm()
+  }
 
-  // 倒计时：每秒 -1
- React.useEffect(() => {
-  if (!isRunning) return
+  React.useEffect(() => {
+    if (!isRunning) return
 
-  const id = setInterval(() => {
-    setRemainingSeconds((prev) => {
-      const next = Math.max(0, prev - 1)
-
-      if (next === 0) {
-        // 1️⃣ 停止计时
-        setIsRunning(false)
-
-        // 2️⃣ 播放音频
-        const audio = audioRef.current
-        if (audio) {
-          audio.currentTime = 0
-          audio.play().catch(() => {
-            console.log("audio play blocked")
-          })
+    const id = setInterval(() => {
+      setRemainingSeconds((prev) => {
+        const next = Math.max(0, prev - 1)
+        if (next === 0) {
+          setIsRunning(false)
+          const audio = audioRef.current
+          if (audio) {
+            audio.currentTime = 0
+            audio.play().catch((err) => console.log("Audio play failed:", err))
+          }
         }
-      }
+        return next
+      })
+    }, 1000)
 
-      return next
-    })
-  }, 1000)
+    return () => clearInterval(id)
+  }, [isRunning])
 
-  return () => clearInterval(id)
-}, [isRunning])
+  // 🚀 计算进度条的偏移量 (关键设计逻辑)
+  // 如果 totalSeconds 为 0，进度为 100%（全圆）
+  const percentage = totalSeconds > 0 ? remainingSeconds / totalSeconds : 1;
+  const strokeDashoffset = CIRCUMFERENCE * (1 - percentage);
 
-
-  const displaySeconds = isRunning ? remainingSeconds : remainingSeconds
+  const displaySeconds = remainingSeconds
   const totalMinutes = Math.round(totalSeconds / 60)
 
   return (
     <div className="page">
       <div className="timer-card">
         <div className="circle">
-          <div className="time">{formatTime(displaySeconds)}</div>
-          <div className="total">
-            {totalSeconds > 0 ? `${totalMinutes} min` : "Set time"}
+          
+          {/* 🚀 新增：SVG 进度环 */}
+          <svg className="progress-ring" width="220" height="220" viewBox="0 0 220 220">
+            {/* 底色圆环 (灰色) */}
+            <circle
+              className="progress-ring__background"
+              stroke="#f0f0f2"
+              strokeWidth="10"
+              fill="transparent"
+              r={RADIUS}
+              cx="110"
+              cy="110"
+            />
+            {/* 动态进度环 (蓝色) */}
+            <circle
+              className="progress-ring__bar"
+              stroke="#0071e3" // 使用我们的 Primary Color
+              strokeWidth="10"
+              strokeLinecap="round" // 让两头变圆，更高级
+              fill="transparent"
+              r={RADIUS}
+              cx="110"
+              cy="110"
+              style={{
+                strokeDasharray: `${CIRCUMFERENCE} ${CIRCUMFERENCE}`,
+                strokeDashoffset: strokeDashoffset,
+                transition: isRunning ? 'stroke-dashoffset 1s linear' : 'stroke-dashoffset 0.3s ease', // 计时时平滑过渡，取消时快速恢复
+                transform: 'rotate(-90deg)', // 让起点在正上方
+                transformOrigin: '50% 50%',
+              }}
+            />
+          </svg>
+
+          {/* 原有的时间文字，改为绝对定位覆盖在 SVG 上 */}
+          <div className="time-display" style={{ position: 'absolute' }}>
+            <div className="time">{formatTime(displaySeconds)}</div>
+            <div className="total">
+              {totalSeconds > 0 ? `${totalMinutes} min` : "Set time"}
+            </div>
           </div>
         </div>
 
         <div className="buttons">
+          
+          <button 
+            className="test-btn" 
+            onClick={handleTest} 
+            disabled={isRunning}
+          >
+            Dev Tool: Test (3s)
+          </button>
+
           {PRESETS.map((p) => (
             <button
               key={p.label}
@@ -142,7 +164,6 @@ function stopAlarm() {
             className="start"
             onClick={handleStart}
             disabled={isRunning || totalSeconds === 0}
-           
           >
             Start
           </button>
@@ -152,24 +173,22 @@ function stopAlarm() {
           </button>
 
           <audio 
-          ref={audioRef} 
-          src="/soda-sound.wav" 
-          preload="auto"
-          onEnded={() => {
-            alarmCountRef.current += 1
-
-            if (alarmCountRef.current <3) {
-              const audio = audioRef.current
-              if (!audio) return
-              audio.currentTime = 0
-              audio.play().catch(() => {})
-            } else {
-              alarmCountRef.current = 0
-            }
-          }}
-          
+            ref={audioRef} 
+            src="/soda-sound.wav" 
+            preload="auto"
+            onEnded={() => {
+              alarmCountRef.current += 1
+              if (alarmCountRef.current < 3) {
+                const audio = audioRef.current
+                if (audio) {
+                  audio.currentTime = 0
+                  audio.play().catch(() => {})
+                }
+              } else {
+                alarmCountRef.current = 0
+              }
+            }}
           />
-
         </div>
       </div>
     </div>
