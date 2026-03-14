@@ -100,16 +100,16 @@ export default function App() {
         <div className="circle">
           
           {/* 🚀 新增：SVG 进度环 */}
-          <svg className="progress-ring" width="220" height="220" viewBox="0 0 220 220">
+          <svg className="progress-ring" width="240" height="240" viewBox="0 0 240 240">
             {/* 底色圆环 (灰色) */}
             <circle
               className="progress-ring__background"
               stroke="#f0f0f2"
               strokeWidth="10"
               fill="transparent"
-              r={RADIUS}
-              cx="110"
-              cy="110"
+              r="100"
+              cx="120"
+              cy="120"
             />
             {/* 动态进度环 (蓝色) */}
             <circle
@@ -118,15 +118,15 @@ export default function App() {
               strokeWidth="10"
               strokeLinecap="round" // 让两头变圆，更高级
               fill="transparent"
-              r={RADIUS}
-              cx="110"
-              cy="110"
+              r="100"
+              cx="120"
+              cy="120"
               style={{
-                strokeDasharray: `${CIRCUMFERENCE} ${CIRCUMFERENCE}`,
-                strokeDashoffset: strokeDashoffset,
-                transition: isRunning ? 'stroke-dashoffset 1s linear' : 'stroke-dashoffset 0.3s ease', // 计时时平滑过渡，取消时快速恢复
-                transform: 'rotate(-90deg)', // 让起点在正上方
-                transformOrigin: '50% 50%',
+                strokeDasharray: `${2 * Math.PI * 100} ${2 * Math.PI * 100}`,
+      strokeDashoffset: strokeDashoffset,
+      transition: isRunning ? 'stroke-dashoffset 1s linear' : 'stroke-dashoffset 0.3s ease',
+      transform: 'rotate(-90deg)',
+      transformOrigin: '120px 120px', // 旋转中心也要改到 120
               }}
             />
           </svg>
