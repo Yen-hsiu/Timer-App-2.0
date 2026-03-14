@@ -24,6 +24,10 @@ export default function App() {
   const audioRef = React.useRef(null)
   const alarmCountRef = React.useRef(0)
 
+  // 🚀 SVG 圆环参数
+  const RADIUS = 100; // 半径
+  const CIRCUMFERENCE = 2 * Math.PI * RADIUS; // 周长
+
   function addMinutes(min) {
     if (isRunning) return
     const add = min * 60
@@ -31,7 +35,6 @@ export default function App() {
     setRemainingSeconds((prev) => prev + add)
   }
 
-  // 🚀 新增：专门用来测试 3 秒的函数
   function handleTest() {
     if (isRunning) return
     setTotalSeconds(3)
@@ -83,6 +86,11 @@ export default function App() {
     return () => clearInterval(id)
   }, [isRunning])
 
+  // 🚀 计算进度条的偏移量 (关键设计逻辑)
+  // 如果 totalSeconds 为 0，进度为 100%（全圆）
+  const percentage = totalSeconds > 0 ? remainingSeconds / totalSeconds : 1;
+  const strokeDashoffset = CIRCUMFERENCE * (1 - percentage);
+
   const displaySeconds = remainingSeconds
   const totalMinutes = Math.round(totalSeconds / 60)
 
@@ -90,13 +98,58 @@ export default function App() {
     <div className="page">
       <div className="timer-card">
         <div className="circle">
-          <div className="time">{formatTime(displaySeconds)}</div>
-          <div className="total">
-            {totalSeconds > 0 ? `${totalMinutes} min` : "Set time"}
+          
+          {/* 🚀 新增：SVG 进度环 */}
+          <svg className="progress-ring" width="220" height="220" viewBox="0 0 220 220">
+            {/* 底色圆环 (灰色) */}
+            <circle
+              className="progress-ring__background"
+              stroke="#f0f0f2"
+              strokeWidth="10"
+              fill="transparent"
+              r={RADIUS}
+              cx="110"
+              cy="110"
+            />
+            {/* 动态进度环 (蓝色) */}
+            <circle
+              className="progress-ring__bar"
+              stroke="#0071e3" // 使用我们的 Primary Color
+              strokeWidth="10"
+              strokeLinecap="round" // 让两头变圆，更高级
+              fill="transparent"
+              r={RADIUS}
+              cx="110"
+              cy="110"
+              style={{
+                strokeDasharray: `${CIRCUMFERENCE} ${CIRCUMFERENCE}`,
+                strokeDashoffset: strokeDashoffset,
+                transition: isRunning ? 'stroke-dashoffset 1s linear' : 'stroke-dashoffset 0.3s ease', // 计时时平滑过渡，取消时快速恢复
+                transform: 'rotate(-90deg)', // 让起点在正上方
+                transformOrigin: '50% 50%',
+              }}
+            />
+          </svg>
+
+          {/* 原有的时间文字，改为绝对定位覆盖在 SVG 上 */}
+          <div className="time-display" style={{ position: 'absolute' }}>
+            <div className="time">{formatTime(displaySeconds)}</div>
+            <div className="total">
+              {totalSeconds > 0 ? `${totalMinutes} min` : "Set time"}
+            </div>
           </div>
         </div>
 
         <div className="buttons">
+          
+          <button 
+            className="test-btn" 
+            onClick={handleTest} 
+            disabled={isRunning}
+          >
+            Dev Tool: Test (3s)
+          </button>
+
           {PRESETS.map((p) => (
             <button
               key={p.label}
@@ -106,16 +159,6 @@ export default function App() {
               {p.label}
             </button>
           ))}
-
-          {/* 🎯 调试神器：3秒测试按钮 */}
-          <button 
-            className="test-btn" 
-            onClick={handleTest} 
-            disabled={isRunning}
-            style={{ backgroundColor: '#FFD700', color: '#000' }} 
-          >
-            Test (3s)
-          </button>
 
           <button
             className="start"
@@ -129,7 +172,6 @@ export default function App() {
             Cancel
           </button>
 
-          {/* 🔊 音频标签 - 确保路径是 /soda-sound.wav */}
           <audio 
             ref={audioRef} 
             src="/soda-sound.wav" 
