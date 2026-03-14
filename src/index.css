@@ -47,11 +47,11 @@ body {
 }
 
 .time {
-  font-size: 52px;
+  font-size: 40px;
   font-weight: 700;
   color: var(--text-main);
   font-variant-numeric: tabular-nums; /* 防止数字跳动 */
-  letter-spacing: -2px;
+  letter-spacing: -1px;
 }
 
 .total {

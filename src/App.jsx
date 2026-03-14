@@ -132,7 +132,15 @@ export default function App() {
           </svg>
 
           {/* 原有的时间文字，改为绝对定位覆盖在 SVG 上 */}
-          <div className="time-display" style={{ position: 'absolute' }}>
+          <div className="time-display" style={{
+            position: 'absolute',
+            top: '50%', 
+            left: '50%', 
+            transform: 'translate(-50%, -50%)', // 强制绝对居中
+            display: 'flex',
+           flexDirection: 'column',
+            alignItems: 'center'
+            }}>
             <div className="time">{formatTime(displaySeconds)}</div>
             <div className="total">
               {totalSeconds > 0 ? `${totalMinutes} min` : "Set time"}
