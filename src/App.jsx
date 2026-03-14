@@ -100,36 +100,41 @@ export default function App() {
         <div className="circle">
           
           {/* 🚀 新增：SVG 进度环 */}
-          <svg className="progress-ring" width="240" height="240" viewBox="0 0 240 240">
-            {/* 底色圆环 (灰色) */}
-            <circle
-              className="progress-ring__background"
-              stroke="#f0f0f2"
-              strokeWidth="10"
-              fill="transparent"
-              r="100"
-              cx="120"
-              cy="120"
-            />
-            {/* 动态进度环 (蓝色) */}
-            <circle
-              className="progress-ring__bar"
-              stroke="#0071e3" // 使用我们的 Primary Color
-              strokeWidth="10"
-              strokeLinecap="round" // 让两头变圆，更高级
-              fill="transparent"
-              r="100"
-              cx="120"
-              cy="120"
-              style={{
-                strokeDasharray: `${2 * Math.PI * 100} ${2 * Math.PI * 100}`,
+          <svg 
+  className="progress-ring" 
+  width="240" 
+  height="240" 
+  viewBox="0 0 240 240"  /* 确保画布足够大 */
+  style={{ overflow: 'visible' }} /* 允许描边稍微溢出一点 */
+>
+  {/* 底色圆环 */}
+  <circle
+    stroke="#f0f0f2"
+    strokeWidth="10"
+    fill="transparent"
+    r="100"          /* 半径 100，直径 200 */
+    cx="120"         /* 中心点在 120 (240的一半)，四周就有 20px 留白 */
+    cy="120"
+  />
+  {/* 动态进度环 */}
+  <circle
+    className="progress-ring__bar"
+    stroke="#0071e3"
+    strokeWidth="10"
+    strokeLinecap="round"
+    fill="transparent"
+    r="100"
+    cx="120"
+    cy="120"
+    style={{
+      strokeDasharray: `${2 * Math.PI * 100} ${2 * Math.PI * 100}`,
       strokeDashoffset: strokeDashoffset,
       transition: isRunning ? 'stroke-dashoffset 1s linear' : 'stroke-dashoffset 0.3s ease',
       transform: 'rotate(-90deg)',
-      transformOrigin: '120px 120px', // 旋转中心也要改到 120
-              }}
-            />
-          </svg>
+      transformOrigin: '120px 120px', /* 旋转中心必须和 cx/cy 一致 */
+    }}
+  />
+</svg>
 
           {/* 原有的时间文字，改为绝对定位覆盖在 SVG 上 */}
           <div className="time-display" style={{
