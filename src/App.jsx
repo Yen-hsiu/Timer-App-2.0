@@ -25,7 +25,7 @@ export default function App() {
   const alarmCountRef = React.useRef(0)
 
   // 🚀 SVG 圆环参数
-  const RADIUS = 100; // 半径
+  const RADIUS = 110; // 半径
   const CIRCUMFERENCE = 2 * Math.PI * RADIUS; // 周长
 
   function addMinutes(min) {
